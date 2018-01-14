@@ -1,5 +1,6 @@
 import math
-import time
+import datetime
+
 block_size = 0.5
 
 def block_name(lat, lon):
@@ -50,5 +51,14 @@ def get_covered_blocks(polygon):
 				covered_blocks.append((la, lo))
 	return covered_blocks
 
-def time_string_to_timestamp(string):
-	return int(time.mktime(time.strptime(string, "%Y-%m-%dT%H:%M:%SZ")) * 1000)
+
+def add_1_day(string):
+	new_date = datetime.datetime.strptime(string, "%Y%m%d") + datetime.timedelta(days = 1)
+	return datetime.datetime.strftime(new_date, '%Y%m%d')
+
+def sub_1_day(string):
+	new_date = datetime.datetime.strptime(string, "%Y%m%d") - datetime.timedelta(days = 1)
+	return datetime.datetime.strftime(new_date, '%Y%m%d')
+
+def wx_json_2_timestamp(string):
+	return int(datetime.datetime.strftime(datetime.datetime.strptime(string, "%Y-%m-%dT%H:%M:%SZ"),'%s'))* 1000
