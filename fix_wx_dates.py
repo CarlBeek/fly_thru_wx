@@ -21,15 +21,19 @@ for file in os.listdir(file_dir):
         try:
             if v_from[0:2] == date_of_file[-2:]:
                 date_from = date_of_file # Valid on day
-            elif v_from[2:4] > '12':
-                date_from = u.add_1_day(date_of_file) # not valid and is in afternoon (+1day)
+#==============================================================================
+#             elif v_from[2:4] > '12':
+#                 date_from = u.add_1_day(date_of_file) # not valid and is in afternoon (+1day)
+#==============================================================================
             else:
                 date_from = u.sub_1_day(date_of_file) # not valid and is in morning (-1day)
     
             if v_to[0:2] == date_of_file[-2:]:
                 date_to = date_of_file # Valid on day
-            elif v_to[2:4] > '12':
-                date_to = u.add_1_day(date_of_file) # not valid and is in afternoon (+1day)
+#==============================================================================
+#             elif v_to[2:4] > '12':
+#                 date_to = u.add_1_day(date_of_file) # not valid and is in afternoon (+1day)
+#==============================================================================
             else:
                 date_to = u.sub_1_day(date_of_file) # not valid and is in morning (-1day)
 
