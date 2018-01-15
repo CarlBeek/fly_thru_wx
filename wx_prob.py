@@ -22,3 +22,4 @@ wx_time_per_block = wx_per_block.map(lambda (block, list_of_sigmets): (block, su
 wx_prob = wx_time_per_block.map(calc_wx_prob)
 wx_prob.toDF().write.json("/user/s1638696/ac_output/wx_prob.json", mode="overwrite")
 
+
