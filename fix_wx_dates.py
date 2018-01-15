@@ -4,8 +4,8 @@ import json
 import math
 import mbd_util as u
 
-file_dir = '/home/reesink93/Documents/Managing Big Data/fly_thru_wx/wx_data/'
-out_file_dir = '/home/reesink93/Documents/Managing Big Data/fly_thru_wx/wx_data_123/'
+file_dir = '/home/s1638696/flight_data/wx_data/' 
+out_file_dir = '/home/s1638696/flight_data/wx_data_fixed/' 
 
 for file in os.listdir(file_dir):
     date_of_file = file[0:8]
