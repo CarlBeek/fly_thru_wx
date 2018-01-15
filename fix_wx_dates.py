@@ -16,7 +16,7 @@ for file in os.listdir(file_dir):
 		except ValueError:
 			print('Unable to parse sigmet: \n')
 			print(s['properties']['rawSigmet'])
-			continue
+			del s
 		try:
 			if v_from[0:2] == date_of_file[-2:]:
 				date_from = date_of_file # Valid on day
@@ -39,6 +39,6 @@ for file in os.listdir(file_dir):
 		except ValueError:
 			print('Error with time ' + v_from + ' ' + v_to + ' in sigmet: ')
 			print(s['properties']['rawSigmet'])
-			continue
+			del s
 	with open(out_file_dir + file, 'w') as outfile:
 		json.dump(sigmets, outfile)
