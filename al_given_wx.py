@@ -44,10 +44,12 @@ def check_poly_fn(block_name, d, w):
     gAlt = d[2]
     posTime = d[3]
     op = d[4]
-    isInside = u.inside_polygon(lat, long, w['geometry']) and w_top > gAlt and w_base < gAlt \
+    isInside = u.inside_polygon(lat, long, ast.literal_eval(w['geometry']['coordinates'][0])) and w_top > gAlt and w_base < gAlt \
      and posTime>w_from and posTime<w_to 
     if isInside:
         return ((weather_type, block_name, op), 1)
+    else:
+        return None
 
 def check_poly(block_name, pair):
     weather = pair[1]
@@ -55,8 +57,14 @@ def check_poly(block_name, pair):
     if data is None or weather is None:
         return []
     #return [(block_name, [len(weather), len(data)])]
-    res = [[check_poly_fn(block_name, d, w) for d in data] for w in weather]
-    return list(itertools.chain.from_iterable(res))
+    res =[]
+    for d in data:
+        for w in weather:
+            c = check_poly_fn(block_name, d, w)
+            if c is not None:
+                res += [c]
+#    res = [[check_poly_fn(block_name, d, w) for d in data] for w in weather]
+    return res #list(itertools.chain.from_iterable(res))
    
 
 
@@ -68,5 +76,5 @@ big = (ac_df.where( (ac_df.GAlt>0) & (ac_df.Lat.isNotNull()) & (ac_df.Long.isNot
 count_per_wx_block_op = big.flatMap(lambda kv: check_poly(kv[0], kv[1])) \
     .reduceByKey(lambda a, b: a+b)
 
-count_per_wx_block_op.toDF().write.json("./al_given_wx.json")
+count_per_wx_block_op.toDF().write.json("file:///home/s1638696/flight_data/al_given_wx.json", mode='overwrite')
 #print(count_per_wx_block_op.collect())
