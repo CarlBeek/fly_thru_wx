@@ -8,13 +8,14 @@ import itertools
 # iterate over blocks
 # 
 sc = SparkContext(appName= "al_given_wx")
+#sc = SparkContext("local")
 sc.setLogLevel('ERROR')
 sqlContext = SQLContext(sc)
 
 #df = sqlContext.read.json("file:///home/s1638696/flight_data/wx_data_fixed/*")
 df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
 
-sigmets = df.flatMap(lambda r: r.features).filter(lambda r: r.properties.geom == "AREA")
+sigmets = df.flatMap(lambda r: r.features).filter(lambda r: r.properties.geom == "AREA" and r.properties.top is not None and r.properties.base is not None and r.properties.v_from is not None and r.properties.v_to is not None)
 sigmets = sigmets.filter(lambda s: type(ast.literal_eval(s.geometry.coordinates[0])) == list)
 wx_blocks = sigmets.flatMap(lambda s: [(block, s) for block in u.get_covered_blocks(ast.literal_eval(s.geometry.coordinates[0]))])
 #wx_per_block = wx_blocks.reduceByKey(lambda a, b: a + b)
@@ -22,7 +23,7 @@ wx_blocks = sigmets.flatMap(lambda s: [(block, s) for block in u.get_covered_blo
 #wx = dict(wx_per_block.collect())
     
 
-ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-*")
+ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-01")
 #ac_df = sqlContext.read.json("hdfs:///user/s1638696/small_ac_data.tar.gz")
 #ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
 
@@ -68,7 +69,7 @@ def groups_to_totals(block, items):
 import json
 # this is going to be very big blocks! introduce time?
 #    .reduceByKey(lambda a, b: a+b )
-totals = (ac_df.where( (ac_df.Op.isNotNull()) & (ac_df.GAlt>0) & (ac_df.Lat.isNotNull()) & (ac_df.Long.isNotNull()) & (ac_df.Reg.isNotNull()) & (ac_df.Reg != '') & (ac_df.Reg != ac_df.Call) & (ac_df.PosStale.isNull()) & (ac_df.CallSus == False))
+totals = (ac_df.where( (ac_df.PosTime > 0) & (ac_df.Op.isNotNull()) & (ac_df.GAlt>0) & (ac_df.Lat.isNotNull()) & (ac_df.Long.isNotNull()) & (ac_df.Reg.isNotNull()) & (ac_df.Reg != '') & (ac_df.Reg != ac_df.Call) & (ac_df.PosStale.isNull()) & (ac_df.CallSus == False))
     .map(flightdata_to_tuple)
     .join(wx_blocks) 
     .filter(lambda kv: inside_poly(kv[1][0], kv[1][1]))
@@ -81,7 +82,4 @@ totals = (ac_df.where( (ac_df.Op.isNotNull()) & (ac_df.GAlt>0) & (ac_df.Lat.isNo
 
 #totals.foreach(groups_to_totals)
 #totals.collect()
-#totals.toDF().write.json("file:///home/s0180858/al_given_wx_prob.json", mode="overwrite")
 totals.toDF().write.json("/user/s1638696/ac_output/al_given_wx_prob.json", mode="overwrite")
-#totals.toDF().write.json("/user/s018058/al_given_wx_prob.json", mode="overwrite")
-#count_per_wx_block_op.toDF().write.json("f", mode='overwrite')
