@@ -17,9 +17,9 @@ def inside_polygon(x, y, points):
     """
     n = len(points)
     inside = False
-    p1x, p1y = points[0]
+    p1y, p1x = points[0]
     for i in range(1, n + 1):
-        p2x, p2y = points[i % n]
+        p2y, p2x = points[i % n]
         if y > min(p1y, p2y):
             if y <= max(p1y, p2y):
                 if x <= max(p1x, p2x):
@@ -33,10 +33,10 @@ def inside_polygon(x, y, points):
 def get_covered_blocks(polygon):
 	if polygon[0] != polygon[-1]:
 		polygon.append(polygon[0])
-	lats = [pos[0] for pos in polygon]
+	lats = [pos[1] for pos in polygon]
 	max_lat = max(lats)
 	min_lat = min(lats)
-	longs = [pos[1] for pos in polygon]
+	longs = [pos[0] for pos in polygon]
 	max_long = max(longs)
 	min_long = min(longs)
 
