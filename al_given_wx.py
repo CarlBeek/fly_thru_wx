@@ -53,7 +53,7 @@ def inside_poly(d, w):
 def map_dw(block_name, d, w):
     weather_type = w['properties']['hazard'] or ""
     op = d[4]
-    return ((weather_type, block_name, op), 1)
+    return ((block_name, op), 1)
 
 def groups_to_totals(block, items):
     total = sum([v for k,v in items])
@@ -73,8 +73,9 @@ totals = (ac_df.where( (ac_df.Op.isNotNull()) & (ac_df.GAlt>0) & (ac_df.Lat.isNo
     .join(wx_blocks) 
     .filter(lambda kv: inside_poly(kv[1][0], kv[1][1]))
     .map(lambda kv: map_dw(kv[0], kv[1][0], kv[1][1]))
-    .reduceByKey(lambda a,b: a+b)
-    .groupBy(lambda (k,v): (k[0], k[1]))
+    .aggregateByKey(0, lambda a,b: a+b, lambda a,b: a+b)
+   # .reduceByKey(lambda a,b: a+b)
+    .groupBy(lambda (k,v): (k[0]))
     .map(lambda (k,v): groups_to_totals(k,v))
     )
 
