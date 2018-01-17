@@ -34,9 +34,10 @@ def combine_dicts(d1, d2):
 			d1[k] = d2[k]
 	return d1
 
-#df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
-df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/*")
-airlines_per_block = df.rdd.filter(lambda r: not (r.Lat is None or r.Long is None or r.Op is None)).map(lambda r: (u.block_name(r.Lat, r.Long), r.Op))
+#ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
+ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/*")
+ac_df_filtered = ac_df.where( (ac_df.GAlt>0) & (ac_df.Lat.isNotNull()) & (ac_df.Long.isNotNull()) & (ac_df.Reg.isNotNull()) & (ac_df.Reg != '') & (ac_df.Reg != ac_df.Call) & (ac_df.PosStale.isNull()) & (ac_df.CallSus == False) & (ac_df.Op.isNotNull()))
+airlines_per_block = ac_df_filtered.map(lambda r: (u.block_name(r.Lat, r.Long), r.Op))
 # This should be aggregate by key. Aggregate operates on partitions instead of combining values accross partitions
 red_al = airlines_per_block.aggregateByKey(dict(), aggregate_airlines, combine_dicts)
 al_prob = red_al.flatMap(lambda (b, d): al_probs(b,d)) 
