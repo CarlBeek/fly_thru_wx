@@ -4,7 +4,7 @@ import mbd_util as u
 import ast
 import itertools
 
-USE_FARM = False
+USE_FARM = True
 USE_POLYGON_CHECK = False
 
 # iterate over blocks
@@ -16,11 +16,12 @@ sqlContext = SQLContext(sc)
 
 
 if USE_FARM:
-    df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
-    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-05.tar.gz")
-else:
     df = sqlContext.read.json("file:///home/s1638696/flight_data/wx_data_fixed/*")
     ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
+else:
+    df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
+    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-05.tar.gz")
+
 
 
 
