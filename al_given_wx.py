@@ -4,8 +4,8 @@ import mbd_util as u
 import ast
 import itertools
 
-USE_FARM = True
-USE_POLYGON_CHECK = False
+USE_FARM = False
+USE_POLYGON_CHECK = True
 
 # iterate over blocks
 # 
@@ -20,7 +20,7 @@ if USE_FARM:
     ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
 else:
     df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
-    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-05.tar.gz")
+    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-*")
 
 
 
@@ -53,8 +53,7 @@ def inside_poly(d, w):
     gAlt = d[2]
     posTime = d[3]
 
-    inside_polygon = not USE_POLYGON_CHECK or u.inside_polygon(lat, long, ast.literal_eval(w['geometry']['coordinates'][0])) 
-    expr = inside_polygon and w_top > gAlt and w_base < gAlt and posTime>w_from and posTime<w_to
+    expr = posTime>w_from and posTime<w_to and w_top > gAlt and w_base < gAlt and (not USE_POLYGON_CHECK or u.inside_polygon(lat, long, ast.literal_eval(w['geometry']['coordinates'][0])))
     return expr
 
 def map_dw(block_name, d, w):
