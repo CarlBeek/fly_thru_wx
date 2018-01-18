@@ -4,6 +4,8 @@ import mbd_util as u
 import ast
 import itertools
 
+USE_FARM = False
+USE_POLYGON_CHECK = False
 
 # iterate over blocks
 # 
@@ -12,8 +14,15 @@ sc = SparkContext(appName= "al_given_wx")
 sc.setLogLevel('ERROR')
 sqlContext = SQLContext(sc)
 
-#df = sqlContext.read.json("file:///home/s1638696/flight_data/wx_data_fixed/*")
-df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
+
+if USE_FARM:
+    df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
+    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-05.tar.gz")
+else:
+    df = sqlContext.read.json("file:///home/s1638696/flight_data/wx_data_fixed/*")
+    ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
+
+
 
 sigmets = df.flatMap(lambda r: r.features).filter(lambda r: r.properties.geom == "AREA" and r.properties.top is not None and r.properties.base is not None and r.properties.v_from is not None and r.properties.v_to is not None)
 sigmets = sigmets.filter(lambda s: type(ast.literal_eval(s.geometry.coordinates[0])) == list)
@@ -22,10 +31,6 @@ wx_blocks = sigmets.flatMap(lambda s: [(block, s) for block in u.get_covered_blo
 
 #wx = dict(wx_per_block.collect())
     
-
-ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-01")
-#ac_df = sqlContext.read.json("hdfs:///user/s1638696/small_ac_data.tar.gz")
-#ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
 
 
 def flightdata_to_tuple(data):
@@ -47,8 +52,8 @@ def inside_poly(d, w):
     gAlt = d[2]
     posTime = d[3]
 
-    expr = u.inside_polygon(lat, long, ast.literal_eval(w['geometry']['coordinates'][0])) and w_top > gAlt and w_base < gAlt \
-        and posTime>w_from and posTime<w_to
+    inside_polygon = not USE_POLYGON_CHECK or u.inside_polygon(lat, long, ast.literal_eval(w['geometry']['coordinates'][0])) 
+    expr = inside_polygon and w_top > gAlt and w_base < gAlt and posTime>w_from and posTime<w_to
     return expr
 
 def map_dw(block_name, d, w):
@@ -75,11 +80,13 @@ totals = (ac_df.where( (ac_df.PosTime > 0) & (ac_df.Op.isNotNull()) & (ac_df.GAl
     .filter(lambda kv: inside_poly(kv[1][0], kv[1][1]))
     .map(lambda kv: map_dw(kv[0], kv[1][0], kv[1][1]))
     .aggregateByKey(0, lambda a,b: a+b, lambda a,b: a+b)
-   # .reduceByKey(lambda a,b: a+b)
     .groupBy(lambda (k,v): (k[0]))
     .map(lambda (k,v): groups_to_totals(k,v))
     )
 
 #totals.foreach(groups_to_totals)
-#totals.collect()
-totals.toDF().write.json("/user/s1638696/ac_output/al_given_wx_prob.json", mode="overwrite")
+
+if USE_FARM:
+    totals.collect()
+else:
+    totals.toDF().write.json("hdfs:///user/s1638696/ac_output/al_given_wx_prob.json", mode="overwrite")
