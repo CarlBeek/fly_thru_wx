@@ -20,12 +20,21 @@ if USE_FARM:
     ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
 else:
     df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
-    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03-*")
+    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03*")
 
 
+def is_area(area_str):
+	l = ast.literal_eval(area_str.geometry.coordinates[0])
+	if not type(l) == list:
+		return False
+	if not type(l[0]) == list:
+		return False
+	return True
 
+sigmets = (df.flatMap(lambda r: r.features)
+    .filter(lambda r: r.properties.top is not None and r.properties.base is not None and r.properties.v_from is not None and r.properties.v_to is not None)
+    .filter(is_area))
 
-sigmets = df.flatMap(lambda r: r.features).filter(lambda r: r.properties.geom == "AREA" and r.properties.top is not None and r.properties.base is not None and r.properties.v_from is not None and r.properties.v_to is not None)
 sigmets = sigmets.filter(lambda s: type(ast.literal_eval(s.geometry.coordinates[0])) == list)
 wx_blocks = sigmets.flatMap(lambda s: [(block, s) for block in u.get_covered_blocks(ast.literal_eval(s.geometry.coordinates[0]))])
 #wx_per_block = wx_blocks.reduceByKey(lambda a, b: a + b)
@@ -61,14 +70,10 @@ def map_dw(block_name, d, w):
     op = d[4]
     return ((block_name, op), 1)
 
-def groups_to_totals(block, items):
+def groups_to_totals(block_name, items):
     total = sum([v for k,v in items])
     res = [(k, float(v)/total ) for k,v in items]
     return res
-    #blockname = "%s_%s_%s" % (block[0], block[1][0], block[1][1])
-    #with open("/home/s0180858/al_given_wx/%s.json"  % blockname, "w") as fp:
-    #    for r in res:
-    #        fp.write( json.dumps(r) )
 
 
 import json
@@ -81,7 +86,7 @@ totals = (ac_df.where( (ac_df.PosTime > 0) & (ac_df.Op.isNotNull()) & (ac_df.GAl
     .map(lambda kv: map_dw(kv[0], kv[1][0], kv[1][1]))
     .aggregateByKey(0, lambda a,b: a+b, lambda a,b: a+b)
     .groupBy(lambda (k,v): (k[0]))
-    .map(lambda (k,v): groups_to_totals(k,v))
+    .flatMap(lambda (k,v): groups_to_totals(k,v))
     )
 
 #totals.foreach(groups_to_totals)
@@ -89,4 +94,4 @@ totals = (ac_df.where( (ac_df.PosTime > 0) & (ac_df.Op.isNotNull()) & (ac_df.GAl
 if USE_FARM:
     totals.collect()
 else:
-    totals.toDF().write.json("hdfs:///user/s1638696/ac_output/al_given_wx_prob.json", mode="overwrite")
+    totals.toDF().write.json("hdfs:///user/s1638696/ac_output/al_given_wx_03", mode="overwrite")
