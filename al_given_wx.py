@@ -20,7 +20,7 @@ if USE_FARM:
     ac_df = sqlContext.read.json("file:///home/s1638696/flight_data/2017-12-19-small.tar.gz")
 else:
     df = sqlContext.read.json("hdfs:///user/s1638696/wx_data/*")
-    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-03*")
+    ac_df = sqlContext.read.json("hdfs:///user/s1638696/flight_data/2017-12*")
 
 
 def is_area(area_str):
@@ -94,4 +94,4 @@ totals = (ac_df.where( (ac_df.PosTime > 0) & (ac_df.Op.isNotNull()) & (ac_df.GAl
 if USE_FARM:
     totals.collect()
 else:
-    totals.toDF().write.json("hdfs:///user/s1638696/ac_output/al_given_wx_03", mode="overwrite")
+    totals.toDF().write.json("hdfs:///user/s1638696/ac_output/al_given_wx_12", mode="overwrite")
